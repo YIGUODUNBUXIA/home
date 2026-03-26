@@ -1,0 +1,2547 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>激励币汇总统计</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --mars-green: #009E60;
+            --mars-green-dark: #007A4A;
+            --mars-green-light: #E6F7F0;
+            --mars-green-lighter: #F3FBF7;
+            --text-dark: #1A3A2A;
+            --text-muted: #5A7A6A;
+            --shadow: 0 8px 24px rgba(0,158,96,0.12);
+            --shadow-hover: 0 12px 32px rgba(0,158,96,0.2);
+        }
+        
+        body { 
+            background: white;
+            padding: 16px; 
+            font-size: 18px; 
+            font-family: "PingFang SC", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            margin: 0;
+        }
+        
+        /* 成功弹窗样式 */
+        #success-alert {
+            position: fixed;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, var(--mars-green) 0%, var(--mars-green-dark) 100%);
+            color: white;
+            padding: 20px 36px;
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0,158,96,0.4);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1060;
+            font-weight: 700;
+            font-size: 20px;
+            backdrop-filter: blur(8px);
+            min-width: 200px;
+            text-align: center;
+        }
+        
+        
+        /* 员工卡片样式 - 固定尺寸 */
+        .employee-card { 
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid transparent;
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+            height: 120px;
+            width: calc(50% - 8px);
+            min-width: 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        
+        .employee-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--mars-green);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .employee-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-hover);
+            border-color: var(--mars-green);
+        }
+        
+        .employee-card:hover::before {
+            opacity: 1;
+        }
+        
+        .employee-name {
+            font-size: 19px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+        }
+        
+
+        
+        .employee-data {
+            font-size: 15px;
+            color: var(--text-muted);
+            font-weight: 500;
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .data-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .data-label {
+            font-weight: 600;
+            color: var(--mars-green);
+        }
+        
+        /* 按钮样式优化 - 固定尺寸 */
+        .btn-mars {
+            background: linear-gradient(135deg, var(--mars-green) 0%, var(--mars-green-dark) 100%);
+            border: none;
+            color: white;
+            font-size: 16px;
+            padding: 12px 20px;
+            font-weight: 600;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-mars::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.2);
+            transition: left 0.5s;
+        }
+        
+        .btn-mars:hover::before {
+            left: 100%;
+        }
+        
+        .btn-mars:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+            color: white;
+        }
+        
+        .btn-outline-mars {
+            border: 2px solid var(--mars-green);
+            color: var(--mars-green);
+            background: white;
+            font-size: 16px;
+            padding: 12px 20px;
+            font-weight: 600;
+            border-radius: 12px;
+            transition: all 0.3s;
+            box-shadow: var(--shadow);
+        }
+        
+        .btn-outline-mars:hover {
+            background: var(--mars-green);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+        
+        .summary-box { 
+            position: relative;
+            border: 2px solid var(--mars-green);
+            padding: 24px;
+            border-radius: 16px;
+            background: white;
+            margin-top: 20px;
+            box-shadow: var(--shadow-hover);
+            width: 100%;
+            max-width: 375px;
+            margin: 20px auto 0;
+        }
+        
+        .rank-text {
+            font-size: 19px;
+            font-weight: 700;
+            color: var(--mars-green);
+            margin-bottom: 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            line-height: 1.2;
+        }
+        
+        .praise-text {
+            color: var(--mars-green);
+            font-weight: 700;
+            font-size: 17px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 0;
+            line-height: 1.2;
+        }
+        
+        .praise-text::before {
+            content: "👏";
+        }
+        
+        .problem-text {
+            color: #D63031;
+            font-weight: 700;
+            font-size: 17px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 0;
+            line-height: 1.2;
+        }
+        
+        .modal-content {
+            border-radius: 20px;
+            border: none;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            width: 340px;
+            margin: 10vh auto;
+        }
+        
+        .modal-header {
+            background: linear-gradient(135deg, var(--mars-green) 0%, var(--mars-green-dark) 100%);
+            color: white;
+            border-radius: 20px 20px 0 0;
+            padding: 16px 20px;
+        }
+        
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        
+        .form-label {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+        }
+        
+        .form-control, .form-check-input {
+            font-size: 15px;
+            padding: 10px 14px;
+            border: 2px solid #E0EDE6;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+        
+        .form-control:focus, .form-check-input:focus {
+            border-color: var(--mars-green);
+            box-shadow: 0 0 0 0.25rem rgba(0,158,96,0.15);
+        }
+        
+        .btn-close {
+            filter: brightness(0) invert(1);
+            opacity: 0.8;
+        }
+        
+        .btn-close:hover {
+            opacity: 1;
+        }
+        
+        .copy-btn {
+            margin-top: 20px;
+            width: 100%;
+            font-size: 17px;
+            padding: 14px;
+            font-weight: 700;
+        }
+        
+        .coin-btn {
+            border: 2px solid var(--mars-green);
+            color: var(--mars-green);
+            background: white;
+            font-size: 16px;
+            padding: 12px;
+            font-weight: 700;
+            border-radius: 12px;
+            transition: all 0.3s;
+            box-shadow: var(--shadow);
+        }
+        
+        .coin-btn:hover, .coin-btn.active {
+            background: var(--mars-green);
+            color: white;
+            transform: scale(1.02);
+            box-shadow: var(--shadow-hover);
+        }
+        
+        .rest-day {
+            color: var(--text-muted);
+            font-style: italic;
+            font-weight: 500;
+        }
+        
+        .month-total-box {
+            background: var(--mars-green-lighter);
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid var(--mars-green-light);
+            box-shadow: var(--shadow);
+        }
+        
+        .month-total-box label {
+            color: var(--text-dark);
+            font-weight: 700;
+        }
+        
+        .month-total-box input {
+            border-color: var(--mars-green);
+            font-weight: 700;
+            color: var(--mars-green);
+        }
+        
+        .divider {
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--mars-green-light), transparent);
+            margin: 20px 0;
+        }
+        
+        
+        /* 功能按钮栏优化 - 固定尺寸，适配屏幕 */
+        .btn-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 0 8px;
+        }
+        
+        .btn-bar .btn {
+            flex: 0 0 45%;
+            max-width: 160px;
+            min-width: 140px;
+            height: 42px;
+            padding: 8px 10px;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        
+        @media (max-width: 320px) {
+            .btn-bar .btn {
+                flex: 0 0 90%;
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+<!-- 主内容框 - 固定宽度，适配屏幕 -->
+<div class="main-content" style="padding: 16px; background: white; border-radius: 16px; box-shadow: var(--shadow); border: 1px solid var(--mars-green-light); width: 100%; max-width: 375px; margin: 0 auto;">
+    <!-- 门店名称与标题 -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 8px;">
+        <span style="color: var(--mars-green); font-weight: 800; font-size: 26px;">门店</span>
+        <input type="text" id="store-name-input" placeholder="请输入" style="width: 100px; padding: 8px 12px; border: 2px solid var(--mars-green); border-radius: 12px; font-size: 16px; font-weight: 700; color: var(--mars-green); background: white; box-shadow: 0 4px 12px rgba(0,158,96,0.15); text-align: center;">
+    </div>
+    <style>
+        /* 美化输入框 */
+        #store-name-input {
+            transition: all 0.3s ease;
+            cursor: text;
+            width: 100px !important;
+            text-align: center !important;
+        }
+        #store-name-input:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0,158,96,0.2);
+        }
+        #store-name-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(0,158,96,0.2);
+        }
+        #store-name-input::placeholder {
+            color: #A0B0A8;
+            font-weight: 600;
+            text-align: center;
+        }
+    </style>
+    <div style="text-align: center; margin-bottom: 12px;">
+        <span style="color: var(--mars-green); font-weight: 800; font-size: 18px; letter-spacing: 1px;">激励币汇总统计</span>
+    </div>
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; margin-bottom: 16px; background: white; padding: 8px 10px; border-radius: 16px; box-shadow: var(--shadow); border: 1px solid var(--mars-green-light); margin: 0 8px 16px;">
+        <span class="date-text" id="current-date" style="color: var(--text-muted); font-size: 11px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;"></span>
+        <span class="half-month-text" id="half-month-display" style="color: var(--mars-green); font-size: 11px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 0 0 auto;"></span>
+    </div>
+    <style>
+        /* 响应式日期显示 */
+        @media (min-width: 375px) {
+            .date-text {
+                max-width: none !important;
+                overflow: visible !important;
+                text-overflow: clip !important;
+            }
+        }
+    </style>
+    <!-- 功能按钮栏 - 固定尺寸按钮，适配屏幕 -->
+    <div class="btn-bar">
+        <button class="btn btn-outline-mars" id="department-btn" onclick="openDepartmentModal()">部门选择：前厅</button>
+        <button class="btn btn-outline-mars" id="employee-manage-btn" onclick="openEmployeeManageModal()">员工管理</button>
+        <button class="btn btn-outline-mars" id="history-btn" onclick="openHistoryModal()">历史记录</button>
+        <button class="btn btn-mars" id="show-summary-btn">统计汇总</button>
+    </div>
+    <!-- 员工列表 - 固定尺寸卡片，两列布局 -->
+    <div class="d-flex flex-wrap gap-2 mb-4" style="justify-content: space-between;" id="employee-list">
+        <div class="text-center" style="font-size:16px;padding:40px 20px;color:var(--text-muted);width: 100%;">
+            <div style="font-size:48px;margin-bottom:16px;">🌱</div>
+            暂无员工，请点击「员工管理」添加
+        </div>
+    </div>
+    <div class="mb-4" style="padding: 0 8px;">
+        <label class="form-label">📝 当日机会点</label>
+        <textarea class="form-control" id="today-problem" rows="2" placeholder="请输入当日机会点..." style="resize: none; overflow-y: auto; height: 80px;"></textarea>
+    </div>
+    <div class="summary-box d-none" id="summary-area">
+        <div id="summary-content" style="font-size:16px;"></div>
+        <button class="btn btn-mars copy-btn" id="copy-summary-btn">📋 一键复制汇总内容</button>
+    </div>
+</div>
+<!-- 成功弹窗 -->
+<div id="success-alert">发放成功</div>
+<!-- 部门选择弹窗 -->
+<div class="modal fade" id="department-modal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title">选择部门</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-grid gap-3 mb-4">
+                    <button class="btn btn-mars" data-department="前厅">前厅</button>
+                    <button class="btn btn-mars" data-department="后厨">后厨</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-mars" data-bs-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="coin-modal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title" id="modal-name">发放激励币</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex gap-1 mb-4" style="flex-shrink: 0;">
+                    <button class="btn coin-btn active flex-fill" data-val="1" style="font-size: 14px; padding: 8px; min-width: 0;">1 张</button>
+                    <button class="btn coin-btn flex-fill" data-val="2" style="font-size: 14px; padding: 8px; min-width: 0;">2 张</button>
+                    <button class="btn coin-btn flex-fill" data-val="3" style="font-size: 14px; padding: 8px; min-width: 0;">3 张</button>
+                    <button class="btn coin-btn flex-fill" data-val="4" style="font-size: 14px; padding: 8px; min-width: 0;">4 张</button>
+                    <button class="btn coin-btn flex-fill" data-val="5" style="font-size: 14px; padding: 8px; min-width: 0;">5 张</button>
+                </div>
+                <div class="mb-4">
+                    <button class="btn coin-btn w-100" data-val="5" data-super="true" style="background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);color: white;border-color: #FFD700;">超级加倍卡（5张）</button>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label" id="quantity-label">自定义数量</label>
+                    <input type="number" class="form-control" id="custom-coin" min="0" value="1" style="font-size:18px;">
+                </div>
+                <div>
+                    <label class="form-label">发放原因（自动填入表扬）</label>
+                    <textarea class="form-control" id="coin-reason" rows="2" style="font-size:16px; resize: none; overflow-y: auto; height: 80px;" placeholder="请输入发放原因..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-mars" id="submit-coin" style="font-size:16px;padding:10px 24px;">确认发放</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="employee-manage-modal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title">员工管理</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="month-total-box">
+                    <div style="font-size:16px;font-weight:700;color:var(--text-dark);margin-bottom:10px;">
+                        <span id="department-month-label">前厅</span>当月激励币数量：
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <input type="number" id="global-month-total" min="0" value="0" style="width:100px;text-align:center;border-radius:8px;">
+                        <span style="margin-left: 4px;">张</span>
+                        <button class="btn btn-sm btn-mars" id="confirm-month-total" style="padding:4px 12px;font-size:14px;margin-left:4px;">确定</button>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label">➕ 添加新员工</label>
+                    <div class="d-flex gap-2">
+                        <input type="text" class="form-control" id="new-employee-name" placeholder="输入员工姓名" style="font-size:16px;">
+                        <button class="btn btn-mars" id="add-employee" style="font-size:16px; padding: 8px 16px; min-width: 80px; text-align: center; display: flex; align-items: center; justify-content: center;">添加</button>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center pb-3 border-bottom" style="border-color:var(--mars-green-light)!important;">
+                    <span style="flex:0 0 50%;font-weight:700;font-size:15px;color:var(--text-dark);">员工姓名</span>
+                    <span style="flex:0 0 50%;font-weight:700;font-size:15px;text-align:right;color:var(--text-dark);">操作</span>
+                </div>
+                <div id="manage-employee-list">
+                    <p class="text-center" style="font-size:15px;padding:30px 0;color:var(--text-muted);">暂无员工</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-mars" data-bs-dismiss="modal" style="font-size:16px;">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- 历史记录弹窗 -->
+<div class="modal fade" id="history-modal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="flex-direction: column; align-items: center; padding: 16px 20px; position: relative;">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" style="position: absolute; top: 10px; right: 10px; filter: brightness(0) invert(1); opacity: 0.8;"></button>
+                <h6 class="modal-title mb-4">历史记录</h6>
+                <div class="d-flex justify-content-between align-items-center w-100">
+                    <button type="button" class="btn" style="background: linear-gradient(135deg, #1E88E5 0%, #1565C0 100%); color: white; border: none; font-weight: 600; border-radius: 8px; padding: 8px 10px; font-size: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60px; width: 60px;" id="clear-history-btn">
+                        <span>清空</span>
+                        <span>记录</span>
+                    </button>
+                    <div class="d-flex gap-2">
+                        <div style="position: relative;">
+                            <input type="date" id="history-date" class="form-control" style="width: 150px; font-size: 14px; padding: 6px 10px; padding-right: 24px;">
+                            <span style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: var(--mars-green); font-size: 14px; cursor: pointer;" onclick="document.getElementById('history-date').click();">📅</span>
+                        </div>
+                        <button type="button" class="btn btn-sm" style="background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%); color: white; border: none; font-weight: 600; border-radius: 8px; padding: 6px 12px;" id="reissue-btn">补发</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div id="history-content" style="font-size:16px;line-height:1.6;"></div>
+                <button class="btn btn-mars copy-btn" id="copy-history-btn" style="margin-top: 20px; width: 100%; font-size: 17px; padding: 14px; font-weight: 700;">📋 一键复制历史记录</button>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+<!-- 补发激励币弹窗 -->
+<div class="modal fade" id="reissue-modal" tabindex="-1">
+    <div class="modal-dialog" style="max-width: 400px; width: 100%;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title" id="reissue-modal-title">补发激励币</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-4">
+                    <label class="form-label">补发日期</label>
+                    <div style="position: relative;">
+                        <input type="date" id="reissue-date" class="form-control" style="width: 100%; font-size: 14px; padding: 10px 14px; padding-right: 30px;">
+                        <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--mars-green); font-size: 14px; cursor: pointer;" onclick="document.getElementById('reissue-date').click();">📅</span>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label">选择员工</label>
+                    <div id="reissue-employee-list" style="max-height: 160px; overflow-y: auto; padding: 4px; border: 1px solid #E0EDE6; border-radius: 8px; background: #F8FFF8; padding-right: 20px; width: 100%; box-sizing: border-box;">
+                        <div style="display: flex; flex-wrap: wrap; gap: 4px; width: 100%;">
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex gap-1 mb-4" style="flex-shrink: 0;">
+                    <button class="btn coin-btn active flex-fill" data-val="1" style="font-size: 14px; padding: 8px; min-width: 0;">1 张</button>
+                    <button class="btn coin-btn flex-fill" data-val="2" style="font-size: 14px; padding: 8px; min-width: 0;">2 张</button>
+                    <button class="btn coin-btn flex-fill" data-val="3" style="font-size: 14px; padding: 8px; min-width: 0;">3 张</button>
+                    <button class="btn coin-btn flex-fill" data-val="4" style="font-size: 14px; padding: 8px; min-width: 0;">4 张</button>
+                    <button class="btn coin-btn flex-fill" data-val="5" style="font-size: 14px; padding: 8px; min-width: 0;">5 张</button>
+                </div>
+                <div class="mb-4">
+                    <button class="btn coin-btn w-100" data-val="5" data-super="true" style="background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);color: white;border-color: #FFD700;">超级加倍卡（5张）</button>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label" id="reissue-quantity-label">自定义数量</label>
+                    <div class="d-flex gap-2">
+                        <input type="number" class="form-control" id="reissue-custom-coin" min="0" value="1" style="font-size:18px;">
+                        <button type="button" class="btn btn-mars" id="submit-reissue" style="font-size:16px;padding:10px 24px;">确认补发</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// 初始化数据
+let currentDepartment = localStorage.getItem('currentDepartment') || '前厅';
+// 为每个部门存储独立的员工数据
+let employeeData = JSON.parse(localStorage.getItem(`employeeData_${currentDepartment}`)) || [];
+// 确保每个员工都有superCoin、dailyRecords和praiseRecords字段
+employeeData.forEach(item => {
+    if (!item.hasOwnProperty('superCoin')) {
+        item.superCoin = 0;
+    }
+    if (!item.hasOwnProperty('dailyRecords')) {
+        item.dailyRecords = {};
+    }
+    if (!item.hasOwnProperty('superCoinRecords')) {
+        item.superCoinRecords = {};
+    }
+    if (!item.hasOwnProperty('praiseRecords')) {
+        item.praiseRecords = [];
+    }
+});
+let currentEditIndex = -1;
+let globalMonthTotal = parseInt(localStorage.getItem(`globalMonthTotal_${currentDepartment}`)) || 0;
+// 门店名称
+let storeName = localStorage.getItem('storeName') || '';
+document.getElementById('store-name-input').value = storeName;
+const today = new Date();
+const todayStr = `${today.getFullYear()}年${today.getMonth()+1}月${today.getDate()}日`;
+const todayDateStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+const todayDate = today.getDate();
+const todayMonth = today.getMonth();
+const todayYear = today.getFullYear();
+let currentHalfMonth = todayDate <=15 ? '上半月' : '下半月';
+
+// 加载当天的机会点内容
+const todayProblemKey = `todayProblem_${currentDepartment}`;
+const savedTodayProblem = localStorage.getItem(todayProblemKey);
+if (savedTodayProblem) {
+    document.getElementById('today-problem').value = savedTodayProblem;
+}
+
+// 监听机会点输入框的变化，实时保存到localStorage中
+document.getElementById('today-problem').addEventListener('input', function() {
+    const todayProblem = this.value.trim();
+    const todayProblemKey = `todayProblem_${currentDepartment}`;
+    localStorage.setItem(todayProblemKey, todayProblem);
+});
+// 更新门店名称
+document.getElementById('store-name-input').addEventListener('input', function() {
+    storeName = this.value.trim();
+    localStorage.setItem('storeName', storeName);
+});
+// 每日自动重置当日数量
+function checkDailyReset() {
+    const lastDailyReset = localStorage.getItem(`lastDailyReset_${currentDepartment}`);
+    
+    if (lastDailyReset !== todayDateStr) {
+        // 保存当天的历史记录，确保表扬内容和机会点被记录
+        // 这里使用 lastDailyReset 作为日期，因为今天还没有开始，lastDailyReset 就是昨天的日期
+        if (lastDailyReset) {
+            // 临时保存当天的机会点内容
+            const todayProblem = document.getElementById('today-problem').value.trim();
+            // 保存昨天的历史记录，确保表扬内容和机会点被记录
+            saveHistoryRecord(lastDailyReset, todayProblem);
+        }
+        
+        // 重置当日数量
+        employeeData.forEach(item => {
+            item.today = 0;
+            item.reason = '';
+            // 重置表扬记录，确保不会带入到第二天
+            item.praiseRecords = [];
+        });
+        
+        // 重置机会点输入框
+        document.getElementById('today-problem').value = '';
+        // 重置localStorage中的机会点内容
+        const todayProblemKey = `todayProblem_${currentDepartment}`;
+        localStorage.removeItem(todayProblemKey);
+        
+        localStorage.setItem(`lastDailyReset_${currentDepartment}`, todayDateStr);
+        saveData();
+    }
+}
+// 每月重置逻辑：只要进入新月份就重置，不管是否是1号打开页面
+function checkMonthlyReset() {
+    const lastReset = localStorage.getItem(`lastMonthlyReset_${currentDepartment}`);
+    const lastResetDate = lastReset ? new Date(lastReset) : null;
+    
+    // 如果没有重置记录，或者重置记录的月份不是当前月份，就重置
+    if (!lastResetDate || lastResetDate.getMonth() !== todayMonth) {
+        // 重置员工的月度数据，但保留已离职的员工
+        employeeData.forEach(item => {
+            // 只重置未离职员工的月度数据
+            if (!item.isResigned) {
+                item.today = 0;
+                item.monthTotal = 0;
+                item.superCoin = 0;
+                item.reason = '';
+                item.praiseRecords = [];
+                item.dailyRecords = {};
+                item.superCoinRecords = {};
+            }
+        });
+        // 重置每日统计数据
+        localStorage.setItem(`dailyStats_${currentDepartment}`, JSON.stringify({}));
+        localStorage.setItem(`lastMonthlyReset_${currentDepartment}`, today.toISOString());
+        saveData();
+    }
+}
+// 设置凌晨自动重置定时器
+function setMidnightResetTimer() {
+    const now = new Date();
+    const nextDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    const timeToMidnight = nextDay - now;
+    
+    setTimeout(() => {
+        checkDailyReset();
+        setMidnightResetTimer();
+    }, timeToMidnight);
+}
+// 月度上下半月统计逻辑：基于员工的dailyRecords计算
+function calcMonthHalfTotal() {
+    let firstHalfTotal = 0;
+    let secondHalfTotal = 0;
+    let monthTotal = 0;
+    const currentMonthStr = `${todayYear}-${String(todayMonth+1).padStart(2, '0')}`;
+    
+    // 遍历所有员工的dailyRecords，计算上下半月的总数量
+    // 包括已删除的员工，确保1-15号的记录被统计
+    employeeData.forEach(item => {
+        if (item.dailyRecords) {
+            for (const dateStr in item.dailyRecords) {
+                // 检查日期是否是当月的
+                if (dateStr.startsWith(currentMonthStr)) {
+                    const date = new Date(dateStr);
+                    const day = date.getDate();
+                    const amount = item.dailyRecords[dateStr];
+                    monthTotal += amount;
+                    if (day <= 15) {
+                        firstHalfTotal += amount;
+                    } else {
+                        secondHalfTotal += amount;
+                    }
+                }
+            }
+        }
+    });
+    
+    return { firstHalfTotal, secondHalfTotal, monthTotal };
+}
+// 清理旧历史记录，只保留最近六个月
+function cleanupOldHistory() {
+    const historyData = JSON.parse(localStorage.getItem(`historyData_${currentDepartment}`)) || {};
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    
+    for (const dateStr in historyData) {
+        const recordDate = new Date(dateStr);
+        if (recordDate < sixMonthsAgo) {
+            delete historyData[dateStr];
+        }
+    }
+    
+    localStorage.setItem(`historyData_${currentDepartment}`, JSON.stringify(historyData));
+}
+// 保存历史记录
+function saveHistoryRecord(dateStr, problem = null) {
+    // 清理旧历史记录
+    cleanupOldHistory();
+    
+    // 基于传入的日期字符串创建日期对象
+    const recordDate = new Date(dateStr);
+    const recordYear = recordDate.getFullYear();
+    const recordMonth = recordDate.getMonth();
+    const recordDay = recordDate.getDate();
+    
+    // 完全基于员工的dailyRecords重新计算该日期所在月份的上下半月数据（只统计到该日期为止）
+    let firstHalfTotal = 0;
+    let secondHalfTotal = 0;
+    let monthTotal = 0;
+    const currentMonthStr = `${recordYear}-${String(recordMonth+1).padStart(2, '0')}`;
+    
+    // 遍历所有员工的dailyRecords，只统计到recordDate为止
+    employeeData.forEach(item => {
+        if (item.dailyRecords) {
+            for (const recDateStr in item.dailyRecords) {
+                const recDate = new Date(recDateStr);
+                const sameMonth = recDate.getFullYear() === recordYear && recDate.getMonth() === recordMonth;
+                const day = recDate.getDate();
+                if (sameMonth && day <= recordDay) {
+                    const amount = item.dailyRecords[recDateStr];
+                    monthTotal += amount;
+                    if (day <= 15) {
+                        firstHalfTotal += amount;
+                    } else {
+                        secondHalfTotal += amount;
+                    }
+                }
+            }
+        }
+    });
+    
+    // 获取机会点内容：如果传入了problem参数，使用传入的内容；否则，只有当记录日期是今天时，才使用当前的机会点内容
+    const prob = problem !== null ? problem : (dateStr === todayDateStr ? document.getElementById('today-problem').value.trim() : '');
+    
+    // 确保机会点内容被保存到历史记录中
+    if (dateStr === todayDateStr) {
+        // 保存当天的机会点内容到localStorage
+        localStorage.setItem(`todayProblem_${currentDepartment}`, prob);
+    }
+    
+    // 从localStorage中获取所有员工数据，包括已删除的员工
+    const allEmployees = JSON.parse(localStorage.getItem(`employeeData_${currentDepartment}`)) || [];
+    console.log('All employees from localStorage:', allEmployees);
+    
+    // 创建员工在记录日期的发放数据数组
+    const employeesWithRecordData = allEmployees.map(item => {
+        // 获取该员工在记录日期的发放数量
+        const recordDayCount = item.dailyRecords && item.dailyRecords[dateStr] ? item.dailyRecords[dateStr] : 0;
+        return {
+            ...item,
+            recordDayCount: recordDayCount
+        };
+    });
+    
+    console.log('employeesWithRecordData:', employeesWithRecordData);
+    
+    // 计算记录日期的总发放数量
+    const td = employeesWithRecordData.reduce((sum, item) => sum + item.recordDayCount, 0);
+    // 计算到记录日期为止的超级加倍卡总数量
+    const totalSuperCoins = employeeData.reduce((sum, item) => {
+        let itemSuperCoins = 0;
+        if (item.superCoinRecords) {
+            for (const recDateStr in item.superCoinRecords) {
+                const recDate = new Date(recDateStr);
+                const sameMonth = recDate.getFullYear() === recordYear && recDate.getMonth() === recordMonth;
+                const day = recDate.getDate();
+                if (sameMonth && day <= recordDay) {
+                    itemSuperCoins += item.superCoinRecords[recDateStr];
+                }
+            }
+        }
+        return sum + itemSuperCoins;
+    }, 0);
+    
+    let summaryText = `${storeName}店 ${currentDepartment} 激励币汇总统计\n`;
+    summaryText += `日期：${dateStr}\n`;
+    
+    let sortedEmployees = [];
+    let filteredEmployees = [];
+    
+    if (employeeData.length) {
+        // 过滤员工：
+        // 1. 对于未删除的员工（包括在职和离职），显示所有员工，不管当月是否有发放记录
+        // 2. 对于已删除的员工，只要当月有发放记录，就保留
+        filteredEmployees = employeesWithRecordData.filter(it => {
+            // 首先检查员工是否已删除
+            if (it.isDeleted) {
+                // 如果员工已删除，检查是否当月有发放记录
+                if (it.dailyRecords) {
+                    for (const recDateStr in it.dailyRecords) {
+                        const recDate = new Date(recDateStr);
+                        const sameMonth = recDate.getFullYear() === recordYear && recDate.getMonth() === recordMonth;
+                        if (sameMonth) {
+                            return true;
+                        }
+                    }
+                }
+                // 已删除且当月无发放记录，不保留
+                return false;
+            } else {
+                // 未删除的员工，直接保留
+                return true;
+            }
+        });
+        
+        // 确保已删除但当月有发放记录的员工能够显示
+        console.log('Filtered employees after filter:', filteredEmployees);
+        
+        console.log('filteredEmployees:', filteredEmployees);
+        console.log('filteredEmployees length:', filteredEmployees.length);
+        
+        // 按记录日期的发放数量排序
+        sortedEmployees = [...filteredEmployees].sort((a,b) => b.recordDayCount - a.recordDayCount);
+        
+        filteredEmployees.forEach(it=>{
+            // 计算该员工到记录日期为止的累计
+            let itemTotal = 0;
+            if (it.dailyRecords) {
+                for (const recDateStr in it.dailyRecords) {
+                    const recDate = new Date(recDateStr);
+                    const sameMonth = recDate.getFullYear() === recordYear && recDate.getMonth() === recordMonth;
+                    const day = recDate.getDate();
+                    if (sameMonth && day <= recordDay) {
+                        itemTotal += it.dailyRecords[recDateStr];
+                    }
+                }
+            }
+            // 判断是否是记录日期当天，如果是且有发放，显示数量，否则显示休班/离职
+            let todayDisplay;
+            if (it.isResigned) {
+                todayDisplay = '离职';
+            } else {
+                // 检查该员工在记录日期是否有发放
+                const hasRecordToday = it.recordDayCount > 0;
+                todayDisplay = hasRecordToday ? `${it.recordDayCount}张` : '休班';
+            }
+            summaryText += `${it.name}：${todayDisplay} 月累计：${itemTotal}张\n`;
+            // 计算该员工到记录日期为止的超级加倍卡数量
+            let itemSuperCoins = 0;
+            if (it.superCoinRecords) {
+                for (const recDateStr in it.superCoinRecords) {
+                    const recDate = new Date(recDateStr);
+                    const sameMonth = recDate.getFullYear() === recordYear && recDate.getMonth() === recordMonth;
+                    const day = recDate.getDate();
+                    if (sameMonth && day <= recordDay) {
+                        itemSuperCoins += it.superCoinRecords[recDateStr];
+                    }
+                }
+            }
+            if (itemSuperCoins > 0) {
+                summaryText += `（超级加倍卡${itemSuperCoins}张）\n`;
+            }
+        });
+    } else {
+        summaryText += '暂无员工数据\n';
+        // 当无员工数据时，确保 sortedEmployees 为空数组
+        sortedEmployees = [];
+        filteredEmployees = [];
+    }
+    
+    if (sortedEmployees && sortedEmployees.length > 0) {
+        const hasTodayCoin = sortedEmployees.some(item => item.recordDayCount > 0);
+        // 计算当日实际收到激励卡的员工数量
+        const activeEmployeesCount = sortedEmployees.filter(item => item.recordDayCount > 0).length;
+        if (!hasTodayCoin) {
+            summaryText += `🥇 当日第一名：无\n`;
+            // 只有当当日收到激励卡的员工数量大于等于7时，才显示第二名
+            if (activeEmployeesCount >= 7) {
+                summaryText += `🥈 当日第二名：无\n`;
+            }
+        } else {
+            const maxCount = sortedEmployees[0].recordDayCount;
+            const topEmployees = sortedEmployees.filter(emp => emp.recordDayCount === maxCount);
+            if (topEmployees.length > 1) {
+                const names = topEmployees.map(emp => emp.name).join('、');
+                summaryText += `🥇 当日第一名：${names}（${maxCount}张）\n`;
+            } else {
+                summaryText += `🥇 当日第一名：${topEmployees[0].name}（${maxCount}张）\n`;
+                // 只有当当日收到激励卡的员工数量大于等于7时，才显示第二名
+                if (activeEmployeesCount >= 7) {
+                    const secondEmployees = sortedEmployees.filter(emp => emp.recordDayCount < maxCount);
+                    if (secondEmployees.length > 0) {
+                        const secondCount = secondEmployees[0].recordDayCount;
+                        const secondGroup = secondEmployees.filter(emp => emp.recordDayCount === secondCount);
+                        if (secondGroup.length > 1) {
+                            const names = secondGroup.map(emp => emp.name).join('、');
+                            summaryText += `🥈 当日第二名：${names}（${secondCount}张）\n`;
+                        } else {
+                            summaryText += `🥈 当日第二名：${secondGroup[0].name}（${secondCount}张）\n`;
+                        }
+                    } else {
+                        summaryText += `🥈 当日第二名：无\n`;
+                    }
+                }
+            }
+        }
+        
+        // 显示指定日期有表扬记录的员工，汇总展示同一人的所有表扬内容
+        const employeesWithPraise = employeeData.filter(item => {
+            return item.praiseRecords && item.praiseRecords.some(record => record.date === dateStr);
+        });
+        if (employeesWithPraise.length > 0) {
+            employeesWithPraise.forEach(item => {
+                summaryText += `👏 表扬：${item.name}\n`;
+                // 将同一人的指定日期的所有表扬内容用两个空格隔开，不换行
+                const praiseReasons = item.praiseRecords
+                    .filter(record => record.date === dateStr)
+                    .map(record => record.reason)
+                    .join('  ');
+                summaryText += `${praiseReasons}\n`;
+            });
+        }
+    }
+    
+    summaryText += `⚠️ 机会点：${prob||'无'}\n`;
+    summaryText += `🎯 ${currentDepartment}当月激励币数量：${globalMonthTotal}张\n`;
+    summaryText += `📊 当月发放总数量：${monthTotal}张\n`;
+    summaryText += `🌗 上半月：${firstHalfTotal}张\n`;
+    summaryText += `🌕 下半月：${secondHalfTotal}张\n`;
+    summaryText += `✨ 超级加倍卡：${totalSuperCoins}张`;
+    
+    const historyData = JSON.parse(localStorage.getItem(`historyData_${currentDepartment}`)) || {};
+    historyData[dateStr] = summaryText;
+    localStorage.setItem(`historyData_${currentDepartment}`, JSON.stringify(historyData));
+}
+// 显示历史记录
+function showHistoryRecord(dateStr) {
+    const historyData = JSON.parse(localStorage.getItem(`historyData_${currentDepartment}`)) || {};
+    let record = historyData[dateStr];
+    
+    // 只有当天的记录会重新生成，过去的日期如果没有记录则显示"无当日记录"
+    if (!record && dateStr === todayDateStr) {
+        // 对于今天的记录，传入当天的机会点内容
+        const todayProblem = document.getElementById('today-problem').value.trim();
+        saveHistoryRecord(dateStr, todayProblem);
+        // 重新从localStorage中读取历史记录
+        const updatedHistoryData = JSON.parse(localStorage.getItem(`historyData_${currentDepartment}`)) || {};
+        record = updatedHistoryData[dateStr];
+    }
+    
+    if (record) {
+        document.getElementById('history-content').innerHTML = `<p style="margin-bottom:0;color:var(--text-dark);line-height:1.2;white-space:pre-wrap;">${record}</p>`;
+    } else {
+        document.getElementById('history-content').innerHTML = '<p class="text-center" style="font-size:16px;padding:40px 20px;color:var(--text-muted);">无当日记录</p>';
+    }
+}
+
+// 打开历史记录模态框
+function openHistoryModal() {
+    // 关闭统计汇总明细
+    closeSummary();
+    
+    // 确保所有模态框都已关闭
+    document.querySelectorAll('.modal').forEach(modal => {
+        const modalInstance = bootstrap.Modal.getInstance(modal);
+        if (modalInstance) {
+            modalInstance.hide();
+        }
+    });
+    
+    // 设置默认日期为今天
+    document.getElementById('history-date').value = todayDateStr;
+    
+    // 显示弹窗
+    const modal = new bootstrap.Modal('#history-modal');
+    modal.show();
+    
+    // 显示今天的历史记录
+    showHistoryRecord(todayDateStr);
+}
+// 设置凌晨自动记录定时器
+function setMidnightRecordTimer() {
+    const now = new Date();
+    const nextDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    const timeToMidnight = nextDay - now;
+    
+    setTimeout(() => {
+        // 记录当天的历史数据
+        const currentDateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        // 传入当天的机会点内容
+        const todayProblem = document.getElementById('today-problem').value.trim();
+        saveHistoryRecord(currentDateStr, todayProblem);
+        setMidnightRecordTimer();
+    }, timeToMidnight);
+}
+// 处理补发模态框关闭事件
+function handleReissueModalClose() {
+    if (window.reissueSuccess && window.reissueDate) {
+        // 清空标志，避免重复触发
+        window.reissueSuccess = false;
+        const reissueDate = window.reissueDate;
+        window.reissueDate = null;
+        
+        // 延迟打开历史记录界面，确保模态框完全关闭
+        setTimeout(() => {
+            // 确保所有模态框都已关闭
+            document.querySelectorAll('.modal').forEach(modal => {
+                const modalInstance = bootstrap.Modal.getInstance(modal);
+                if (modalInstance) {
+                    modalInstance.hide();
+                }
+            });
+            
+            // 打开历史记录界面
+            document.getElementById('history-btn').click();
+            // 选择补发的日期
+            document.getElementById('history-date').value = reissueDate;
+            // 显示该日期的历史记录
+            showHistoryRecord(reissueDate);
+        }, 300);
+    }
+}
+
+// 打开员工管理模态框
+function openEmployeeManageModal() {
+    try {
+        console.log('Opening employee manage modal');
+        
+        // 关闭统计汇总明细
+        closeSummary();
+        
+        // 确保所有模态框都已关闭
+        document.querySelectorAll('.modal').forEach(modal => {
+            const modalInstance = bootstrap.Modal.getInstance(modal);
+            if (modalInstance) {
+                modalInstance.hide();
+            }
+        });
+        
+        console.log('Calling renderManageEmployeeList()');
+        renderManageEmployeeList();
+        
+        console.log('Creating bootstrap Modal for employee-manage-modal');
+        const modal = new bootstrap.Modal('#employee-manage-modal');
+        console.log('Showing modal');
+        modal.show();
+        console.log('Modal shown successfully');
+    } catch (error) {
+        console.error('Error in openEmployeeManageModal:', error);
+        alert('打开员工管理模态框时出错：' + error.message);
+    }
+}
+
+// 打开部门选择模态框
+function openDepartmentModal() {
+    console.log('Opening department modal');
+    
+    // 关闭统计汇总明细
+    closeSummary();
+    
+    // 确保所有模态框都已关闭
+    document.querySelectorAll('.modal').forEach(modal => {
+        const modalInstance = bootstrap.Modal.getInstance(modal);
+        if (modalInstance) {
+            modalInstance.hide();
+        }
+    });
+    
+    new bootstrap.Modal('#department-modal').show();
+}
+
+// 通用的自定义确认弹窗函数
+function showCustomConfirm(title, message, onConfirm) {
+    const dialog = document.createElement('div');
+    dialog.style.position = 'fixed';
+    dialog.style.top = '0';
+    dialog.style.left = '0';
+    dialog.style.width = '100%';
+    dialog.style.height = '100%';
+    dialog.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+    dialog.style.display = 'flex';
+    dialog.style.alignItems = 'center';
+    dialog.style.justifyContent = 'center';
+    dialog.style.zIndex = '1100';
+    
+    const dialogContent = document.createElement('div');
+    dialogContent.style.backgroundColor = 'white';
+    dialogContent.style.borderRadius = '16px';
+    dialogContent.style.padding = '24px';
+    dialogContent.style.width = '90%';
+    dialogContent.style.maxWidth = '350px';
+    dialogContent.style.boxShadow = '0 20px 60px rgba(0, 0, 0, 0.2)';
+    
+    const dialogTitle = document.createElement('h6');
+    dialogTitle.style.textAlign = 'center';
+    dialogTitle.style.marginBottom = '16px';
+    dialogTitle.style.color = 'var(--text-dark)';
+    dialogTitle.style.fontWeight = '700';
+    dialogTitle.textContent = title;
+    
+    const dialogMessage = document.createElement('p');
+    dialogMessage.style.textAlign = 'center';
+    dialogMessage.style.marginBottom = '20px';
+    dialogMessage.style.color = 'var(--text-muted)';
+    dialogMessage.style.fontSize = '14px';
+    dialogMessage.style.lineHeight = '1.6';
+    dialogMessage.textContent = message;
+    
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.display = 'flex';
+    buttonContainer.style.gap = '10px';
+    
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'btn btn-outline-mars';
+    cancelBtn.style.flex = '1';
+    cancelBtn.textContent = '取消';
+    cancelBtn.onclick = () => {
+        document.body.removeChild(dialog);
+    };
+    
+    const confirmBtn = document.createElement('button');
+    confirmBtn.className = 'btn';
+    confirmBtn.style.flex = '1';
+    confirmBtn.style.background = 'linear-gradient(135deg, #D32F2F 0%, #B71C1C 100%)';
+    confirmBtn.style.color = 'white';
+    confirmBtn.style.border = 'none';
+    confirmBtn.style.fontWeight = '600';
+    confirmBtn.textContent = '确定';
+    confirmBtn.onclick = () => {
+        document.body.removeChild(dialog);
+        onConfirm();
+    };
+    
+    buttonContainer.appendChild(cancelBtn);
+    buttonContainer.appendChild(confirmBtn);
+    
+    dialogContent.appendChild(dialogTitle);
+    dialogContent.appendChild(dialogMessage);
+    dialogContent.appendChild(buttonContainer);
+    dialog.appendChild(dialogContent);
+    
+    document.body.appendChild(dialog);
+}
+
+// 通用的成功提示悬浮提示（Toast）函数 - 使用和发放激励币成功一样的样式
+function showSuccessAlert(message) {
+    const toast = document.createElement('div');
+    toast.style.position = 'fixed';
+    toast.style.top = '100px';
+    toast.style.left = '50%';
+    toast.style.transform = 'translateX(-50%)';
+    toast.style.background = 'linear-gradient(135deg, var(--mars-green) 0%, var(--mars-green-dark) 100%)';
+    toast.style.color = 'white';
+    toast.style.padding = '20px 36px';
+    toast.style.borderRadius = '16px';
+    toast.style.boxShadow = '0 8px 24px rgba(0,158,96,0.4)';
+    toast.style.opacity = '0';
+    toast.style.transition = 'opacity 0.3s ease';
+    toast.style.zIndex = '1060';
+    toast.style.fontWeight = '700';
+    toast.style.fontSize = '20px';
+    toast.style.backdropFilter = 'blur(8px)';
+    toast.style.minWidth = '200px';
+    toast.style.textAlign = 'center';
+    
+    toast.textContent = message;
+    
+    document.body.appendChild(toast);
+    
+    // 显示动画
+    setTimeout(() => {
+        toast.style.opacity = '1';
+    }, 10);
+    
+    // 0.8秒后自动消失
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => {
+            if (toast.parentNode) {
+                document.body.removeChild(toast);
+            }
+        }, 300);
+    }, 800);
+}
+
+// 页面加载时为所有模态框添加关闭事件处理
+window.addEventListener('DOMContentLoaded', function() {
+    // 页面加载时清理可能遗留的modal-open类和backdrop
+    document.body.classList.remove('modal-open');
+    document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+        backdrop.remove();
+    });
+    
+    const modals = document.querySelectorAll('.modal');
+    modals.forEach(modal => {
+        modal.addEventListener('hidden.bs.modal', function() {
+            // 移除所有模态框的backdrop
+            document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+                backdrop.remove();
+            });
+            // 确保body元素没有modal-open类
+            document.body.classList.remove('modal-open');
+            // 确保页面可以滚动
+            document.body.style.overflow = '';
+        });
+    });
+    
+    // 历史记录日期输入变化事件
+    document.getElementById('history-date').addEventListener('change', () => {
+        const date = document.getElementById('history-date').value;
+        if (date) {
+            showHistoryRecord(date);
+        }
+    });
+    
+    // 当日机会点输入变化事件，自动更新历史记录
+    document.getElementById('today-problem').addEventListener('input', () => {
+        // 关闭统计汇总明细
+        closeSummary();
+        
+        const todayProblem = document.getElementById('today-problem').value.trim();
+        saveHistoryRecord(todayDateStr, todayProblem);
+    });
+    
+    // 历史记录复制按钮点击事件
+    document.getElementById('copy-history-btn').addEventListener('click',()=>{
+        const content = document.getElementById('history-content').innerText;
+        navigator.clipboard.writeText(content).then(()=>{
+            alert('✅ 已复制到剪贴板！');
+        }).catch(err=>{
+            console.error('复制失败：', err);
+            alert('复制失败，请手动复制');
+        });
+    });
+    
+    // 补发激励币按钮点击事件
+    document.getElementById('reissue-btn').addEventListener('click', () => {
+        const reissueDate = document.getElementById('history-date').value;
+        if (reissueDate) {
+            // 打开补发激励币弹窗
+            openReissueModal(reissueDate);
+        } else {
+            alert('请选择补发日期');
+        }
+    });
+});
+
+// 清空记录按钮点击事件
+document.getElementById('clear-history-btn').addEventListener('click', () => {
+    // 完全关闭历史记录模态框
+    const historyModal = bootstrap.Modal.getInstance('#history-modal');
+    if (historyModal) {
+        historyModal.hide();
+    }
+    
+    // 等待历史记录模态框完全关闭后再打开清空记录对话框
+    setTimeout(() => {
+        // 清理所有可能遗留的backdrop
+        document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+            backdrop.remove();
+        });
+        // 清理modal-open类
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        
+        // 创建自定义确认对话框
+        const dialog = document.createElement('div');
+        dialog.style.position = 'fixed';
+        dialog.style.top = '0';
+        dialog.style.left = '0';
+        dialog.style.width = '100%';
+        dialog.style.height = '100%';
+        dialog.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+        dialog.style.display = 'flex';
+        dialog.style.alignItems = 'flex-start';
+        dialog.style.justifyContent = 'center';
+        dialog.style.paddingTop = '100px';
+        dialog.style.zIndex = '1080';
+        
+        const dialogContent = document.createElement('div');
+        dialogContent.style.backgroundColor = 'white';
+        dialogContent.style.borderRadius = '16px';
+        dialogContent.style.padding = '20px';
+        dialogContent.style.width = '90%';
+        dialogContent.style.maxWidth = '300px';
+        dialogContent.style.boxShadow = '0 20px 60px rgba(0, 0, 0, 0.2)';
+        
+        const title = document.createElement('h6');
+        title.style.textAlign = 'center';
+        title.style.marginBottom = '20px';
+        title.style.color = 'var(--text-dark)';
+        title.textContent = '选择清空选项';
+        
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.display = 'flex';
+        buttonContainer.style.flexDirection = 'column';
+        buttonContainer.style.gap = '10px';
+        
+        const clearHistoryBtn = document.createElement('button');
+        clearHistoryBtn.className = 'btn';
+        clearHistoryBtn.style.background = 'linear-gradient(135deg, #1E88E5 0%, #1565C0 100%)';
+        clearHistoryBtn.style.color = 'white';
+        clearHistoryBtn.style.border = 'none';
+        clearHistoryBtn.style.fontWeight = '600';
+        clearHistoryBtn.style.borderRadius = '12px';
+        clearHistoryBtn.style.padding = '12px';
+        clearHistoryBtn.style.width = '100%';
+        clearHistoryBtn.textContent = '清空历史记录';
+        
+        const clearMonthBtn = document.createElement('button');
+        clearMonthBtn.className = 'btn';
+        clearMonthBtn.style.background = 'linear-gradient(135deg, #D32F2F 0%, #B71C1C 100%)';
+        clearMonthBtn.style.color = 'white';
+        clearMonthBtn.style.border = 'none';
+        clearMonthBtn.style.fontWeight = '600';
+        clearMonthBtn.style.borderRadius = '12px';
+        clearMonthBtn.style.padding = '12px';
+        clearMonthBtn.style.width = '100%';
+        clearMonthBtn.textContent = '清空当月激励币发放数据';
+        
+        // 创建包含按钮和说明的容器
+        const clearEmployeesContainer = document.createElement('div');
+        clearEmployeesContainer.style.borderRadius = '12px';
+        clearEmployeesContainer.style.overflow = 'hidden';
+        
+        const clearEmployeesBtn = document.createElement('button');
+        clearEmployeesBtn.className = 'btn';
+        clearEmployeesBtn.style.background = 'linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%)';
+        clearEmployeesBtn.style.color = 'white';
+        clearEmployeesBtn.style.border = 'none';
+        clearEmployeesBtn.style.fontWeight = '600';
+        clearEmployeesBtn.style.borderRadius = '0';
+        clearEmployeesBtn.style.padding = '12px';
+        clearEmployeesBtn.style.width = '100%';
+        clearEmployeesBtn.style.textAlign = 'center';
+        clearEmployeesBtn.textContent = '离职员工数据清除';
+        
+        // 添加说明文字
+        const clearEmployeesDesc = document.createElement('div');
+        clearEmployeesDesc.style.backgroundColor = '#F8F0FF';
+        clearEmployeesDesc.style.padding = '10px';
+        clearEmployeesDesc.style.fontSize = '12px';
+        clearEmployeesDesc.style.color = 'var(--text-muted)';
+        clearEmployeesDesc.style.textAlign = 'center';
+        clearEmployeesDesc.style.marginTop = '0';
+        clearEmployeesDesc.style.marginBottom = '0';
+        clearEmployeesDesc.textContent = '此功能为1-15号未兑换激励币的离职员工，但系统记录在内的需要清除其数据功能。若已兑换则不要清除其数据。';
+        
+        // 将按钮和说明添加到容器中
+        clearEmployeesContainer.appendChild(clearEmployeesBtn);
+        clearEmployeesContainer.appendChild(clearEmployeesDesc);
+        
+        // 将容器添加到按钮容器中
+        buttonContainer.appendChild(clearEmployeesContainer);
+        
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'btn btn-outline-mars';
+        cancelBtn.style.width = '100%';
+        cancelBtn.style.marginTop = '10px';
+        cancelBtn.textContent = '取消';
+        
+        buttonContainer.appendChild(clearHistoryBtn);
+        buttonContainer.appendChild(clearMonthBtn);
+        buttonContainer.appendChild(cancelBtn);
+        
+        dialogContent.appendChild(title);
+        dialogContent.appendChild(buttonContainer);
+        dialog.appendChild(dialogContent);
+        
+        document.body.appendChild(dialog);
+        
+        // 清空历史记录
+        clearHistoryBtn.addEventListener('click', () => {
+            showCustomConfirm(
+                '确认清空',
+                '确定要清空所有历史记录吗？此操作不可恢复。',
+                () => {
+                    localStorage.removeItem(`historyData_${currentDepartment}`);
+                    document.body.removeChild(dialog);
+                    setTimeout(() => {
+                        showSuccessAlert('历史记录已清空');
+                    }, 100);
+                }
+            );
+        });
+        
+        // 清空当月激励币发放数据
+        clearMonthBtn.addEventListener('click', () => {
+            showCustomConfirm(
+                '确认清空',
+                '确定要清空当月激励币发放数据吗？此操作不可恢复。',
+                () => {
+                    // 重置员工的月度数据
+                    employeeData.forEach(item => {
+                        item.today = 0;
+                        item.monthTotal = 0;
+                        item.superCoin = 0;
+                        item.reason = '';
+                        item.dailyRecords = {};
+                        item.superCoinRecords = {};
+                        item.praiseRecords = [];
+                    });
+                    // 重置每日统计数据
+                    localStorage.setItem(`dailyStats_${currentDepartment}`, JSON.stringify({}));
+                    localStorage.setItem(`lastMonthlyReset_${currentDepartment}`, today.toISOString());
+                    saveData();
+                    renderEmployee();
+                    renderManageEmployeeList();
+                    document.body.removeChild(dialog);
+                    setTimeout(() => {
+                        showSuccessAlert('当月激励币发放数据已清空');
+                    }, 100);
+                }
+            );
+        });
+        
+        // 离职员工数据清除
+        clearEmployeesContainer.addEventListener('click', () => {
+            // 获取当月内已删除的员工
+            const today = new Date();
+            const currentMonth = today.getMonth();
+            const currentYear = today.getFullYear();
+            const deletedEmployees = employeeData.filter(item => item.isDeleted);
+            
+            if (deletedEmployees.length === 0) {
+                showCustomConfirm(
+                    '提示',
+                    '当月内没有已删除的员工',
+                    () => {
+                        document.body.removeChild(dialog);
+                    }
+                );
+                return;
+            }
+            
+            // 创建离职员工列表对话框
+            const employeeDialog = document.createElement('div');
+            employeeDialog.style.position = 'fixed';
+            employeeDialog.style.top = '0';
+            employeeDialog.style.left = '0';
+            employeeDialog.style.width = '100%';
+            employeeDialog.style.height = '100%';
+            employeeDialog.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+            employeeDialog.style.display = 'flex';
+            employeeDialog.style.alignItems = 'center';
+            employeeDialog.style.justifyContent = 'center';
+            employeeDialog.style.zIndex = '1090';
+            
+            const employeeDialogContent = document.createElement('div');
+            employeeDialogContent.style.backgroundColor = 'white';
+            employeeDialogContent.style.borderRadius = '16px';
+            employeeDialogContent.style.padding = '20px';
+            employeeDialogContent.style.width = '90%';
+            employeeDialogContent.style.maxWidth = '400px';
+            employeeDialogContent.style.maxHeight = '80vh';
+            employeeDialogContent.style.overflow = 'auto';
+            employeeDialogContent.style.boxShadow = '0 20px 60px rgba(0, 0, 0, 0.2)';
+            
+            const employeeDialogTitle = document.createElement('h6');
+            employeeDialogTitle.textContent = '选择要清除数据的离职员工';
+            employeeDialogTitle.style.marginBottom = '16px';
+            
+            const employeeList = document.createElement('div');
+            employeeList.style.display = 'flex';
+            employeeList.style.flexDirection = 'column';
+            employeeList.style.gap = '8px';
+            
+            deletedEmployees.forEach(employee => {
+                const employeeItem = document.createElement('div');
+                employeeItem.style.padding = '12px';
+                employeeItem.style.border = '1px solid #E0EDE6';
+                employeeItem.style.borderRadius = '8px';
+                employeeItem.style.display = 'flex';
+                employeeItem.style.justifyContent = 'space-between';
+                employeeItem.style.alignItems = 'center';
+                employeeItem.style.cursor = 'pointer';
+                
+                const employeeName = document.createElement('span');
+                employeeName.style.fontWeight = '600';
+                employeeName.textContent = employee.name;
+                
+                const employeeStatus = document.createElement('span');
+                employeeStatus.style.fontSize = '12px';
+                employeeStatus.style.color = '#FFD700';
+                employeeStatus.textContent = '已离职';
+                
+                employeeItem.appendChild(employeeName);
+                employeeItem.appendChild(employeeStatus);
+                
+                employeeItem.onclick = () => {
+                    showCustomConfirm(
+                        '确认清除',
+                        '是否清除此离职员工当月的所有数据？',
+                        () => {
+                            // 清除离职员工当月的所有数据
+                            employee.dailyRecords = {};
+                            employee.monthTotal = 0;
+                            employee.superCoin = 0;
+                            employee.superCoinRecords = {};
+                            employee.praiseRecords = [];
+                            employee.reason = '';
+                            
+                            // 从数组中移除该员工
+                            const employeeIndex = employeeData.indexOf(employee);
+                            if (employeeIndex > -1) {
+                                employeeData.splice(employeeIndex, 1);
+                            }
+                            
+                            // 保存数据
+                            saveData();
+                            
+                            // 重新渲染
+                            renderEmployee();
+                            renderManageEmployeeList();
+                            
+                            // 关闭对话框
+                            try {
+                                if (employeeDialog && employeeDialog.parentNode) {
+                                    document.body.removeChild(employeeDialog);
+                                }
+                                if (dialog && dialog.parentNode) {
+                                    document.body.removeChild(dialog);
+                                }
+                            } catch (error) {
+                                console.error('关闭对话框时出错:', error);
+                            }
+                            
+                            // 显示成功提示
+                            setTimeout(() => {
+                                showSuccessAlert('离职员工数据已清除');
+                            }, 100);
+                        }
+                    );
+                };
+                
+                employeeList.appendChild(employeeItem);
+            });
+            
+            const employeeDialogCancelBtn = document.createElement('button');
+            employeeDialogCancelBtn.className = 'btn btn-outline-mars';
+            employeeDialogCancelBtn.style.width = '100%';
+            employeeDialogCancelBtn.style.marginTop = '16px';
+            employeeDialogCancelBtn.textContent = '取消';
+            employeeDialogCancelBtn.onclick = () => {
+                document.body.removeChild(employeeDialog);
+            };
+            
+            employeeDialogContent.appendChild(employeeDialogTitle);
+            employeeDialogContent.appendChild(employeeList);
+            employeeDialogContent.appendChild(employeeDialogCancelBtn);
+            employeeDialog.appendChild(employeeDialogContent);
+            document.body.appendChild(employeeDialog);
+        });
+        
+        // 取消按钮
+        cancelBtn.onclick = () => {
+            document.body.removeChild(dialog);
+        };
+    }, 300);
+});
+
+function init() {
+    console.log('init function called');
+    document.getElementById('current-date').textContent = `📅 日期：${todayStr}`;
+    document.getElementById('half-month-display').textContent = `🌿 当前：${currentHalfMonth}`;
+    document.getElementById('department-btn').textContent = `部门选择：${currentDepartment}`;
+    document.getElementById('department-month-label').textContent = currentDepartment;
+    checkMonthlyReset();
+    checkDailyReset();
+    setMidnightResetTimer();
+    setMidnightRecordTimer();
+    renderEmployee();
+    renderManageEmployeeList();
+    
+    // 历史记录按钮点击事件已在HTML中通过onclick属性处理
+}
+
+// 员工管理按钮点击事件
+document.getElementById('employee-manage-btn').addEventListener('click',()=>{
+        // 关闭统计汇总明细
+        closeSummary();
+        
+        // 确保所有模态框都已关闭
+        document.querySelectorAll('.modal').forEach(modal => {
+            const modalInstance = bootstrap.Modal.getInstance(modal);
+            if (modalInstance) {
+                modalInstance.hide();
+            }
+        });
+        
+        renderManageEmployeeList();
+        new bootstrap.Modal('#employee-manage-modal').show();
+    });
+// 部门选择按钮点击事件
+document.getElementById('department-btn').addEventListener('click', () => {
+    // 关闭统计汇总明细
+    closeSummary();
+    
+    // 确保所有模态框都已关闭
+    document.querySelectorAll('.modal').forEach(modal => {
+        const modalInstance = bootstrap.Modal.getInstance(modal);
+        if (modalInstance) {
+            modalInstance.hide();
+        }
+    });
+    
+    new bootstrap.Modal('#department-modal').show();
+});
+// 部门选择事件
+document.querySelectorAll('#department-modal .btn-mars').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const department = btn.dataset.department;
+        currentDepartment = department;
+        // 重新加载当前部门的数据
+        employeeData = JSON.parse(localStorage.getItem(`employeeData_${currentDepartment}`)) || [];
+        globalMonthTotal = parseInt(localStorage.getItem(`globalMonthTotal_${currentDepartment}`)) || 0;
+        // 确保每个员工都有superCoin字段
+        employeeData.forEach(item => {
+            if (!item.hasOwnProperty('superCoin')) {
+                item.superCoin = 0;
+            }
+            if (!item.hasOwnProperty('dailyRecords')) {
+                item.dailyRecords = {};
+            }
+            if (!item.hasOwnProperty('superCoinRecords')) {
+                item.superCoinRecords = {};
+            }
+        });
+        // 加载当前部门的机会点内容
+        const todayProblemKey = `todayProblem_${currentDepartment}`;
+        const savedTodayProblem = localStorage.getItem(todayProblemKey);
+        if (savedTodayProblem) {
+            document.getElementById('today-problem').value = savedTodayProblem;
+        } else {
+            document.getElementById('today-problem').value = '';
+        }
+        saveData();
+        
+        // 关闭模态框并清理后再初始化
+        const departmentModal = bootstrap.Modal.getInstance('#department-modal');
+        if (departmentModal) {
+            departmentModal.hide();
+            // 等待模态框关闭后再初始化
+            setTimeout(() => {
+                // 确保body元素没有modal-open类
+                document.body.classList.remove('modal-open');
+                init();
+            }, 300);
+        } else {
+            // 确保body元素没有modal-open类
+            document.body.classList.remove('modal-open');
+            init();
+        }
+    });
+});
+// 确认当月激励币数量按钮点击事件
+document.getElementById('confirm-month-total').addEventListener('click', () => {
+    globalMonthTotal = parseInt(document.getElementById('global-month-total').value) || 0;
+    localStorage.setItem(`globalMonthTotal_${currentDepartment}`, globalMonthTotal);
+    saveData();
+    
+    // 显示成功提示
+    const successAlert = document.getElementById('success-alert');
+    successAlert.textContent = '设置成功';
+    successAlert.style.opacity = '1';
+    setTimeout(() => {
+        successAlert.style.opacity = '0';
+    }, 800);
+});
+// 主界面员工列表渲染 - 固定尺寸卡片
+function renderEmployee() {
+    const list = document.getElementById('employee-list');
+    list.innerHTML = '';
+    
+    // 过滤掉已删除的员工
+    const activeEmployees = employeeData.filter(item => !item.isDeleted);
+    
+    if (activeEmployees.length === 0) {
+        list.innerHTML = `
+            <div class="text-center" style="font-size:16px;padding:40px 20px;color:var(--text-muted);width: 100%;">
+                <div style="font-size:48px;margin-bottom:16px;">🌱</div>
+                暂无员工，请点击「员工管理」添加
+            </div>
+        `;
+    } else {
+        // 只显示在职员工
+        employeeData.forEach((item, originalIndex)=>{
+            if (!item.isResigned && !item.isDeleted) {
+                const todayDisplay = item.today === 0 ? '无' : `${item.today}张`;
+                const card = document.createElement('div');
+                card.className = 'employee-card';
+                card.onclick = () => openCoinModal(originalIndex);
+                card.innerHTML = `
+                    <div class="employee-name">
+                        <span style="display: inline-block; width: 8px; height: 8px; background: var(--mars-green); border-radius: 50%; margin-right: 8px;"></span>${item.name}
+                    </div>
+                    <div class="employee-data">
+                        <span class="data-item"><span class="data-label">当日</span>${todayDisplay}</span>
+                        <span class="data-item"><span class="data-label">月累计</span>${item.monthTotal}张</span>
+                    </div>
+                `;
+                list.appendChild(card);
+            }
+        });
+    }
+}
+function renderManageEmployeeList() {
+    const list = document.getElementById('manage-employee-list');
+    list.innerHTML = '';
+    document.getElementById('global-month-total').value = globalMonthTotal;
+    
+    // 过滤掉已删除的员工
+    const activeEmployees = employeeData.filter(item => !item.isDeleted);
+    
+    if (activeEmployees.length === 0) {
+        list.innerHTML = '<p class="text-center" style="font-size:15px;padding:30px 0;color:var(--text-muted);">暂无员工</p>';
+    } else {
+        // 只显示在职员工
+        const activeEmployeesList = activeEmployees.filter(item => !item.isResigned);
+        if (activeEmployeesList.length === 0) {
+            list.innerHTML = '<p class="text-center" style="font-size:15px;padding:30px 0;color:var(--text-muted);">暂无员工</p>';
+        } else {
+            employeeData.forEach((item, originalIndex)=>{
+                if (!item.isResigned && !item.isDeleted) {
+                    const div = document.createElement('div');
+                    div.className = 'd-flex justify-content-between align-items-center py-3 border-bottom';
+                    div.style.borderColor = 'var(--mars-green-light)';
+                    div.innerHTML = `
+                    <div style="flex:0 0 50%;font-size:16px;font-weight:700;color:var(--text-dark);">${item.name}</div>
+                    <div style="flex:0 0 50%;text-align:right;">
+                        <button class="btn btn-sm" style="background:#FFE5E5;color:#D63031;border:none;font-weight:600;border-radius:8px;" onclick="confirmDeleteEmployee(${originalIndex})")">删除</button>
+                    </div>
+                `;
+                    list.appendChild(div);
+                }
+            });
+        }
+    }
+}
+document.addEventListener('input', function(e){
+    if(e.target && e.target.id === 'global-month-total'){
+        globalMonthTotal = parseInt(e.target.value) || 0;
+        localStorage.setItem(`globalMonthTotal_${currentDepartment}`, globalMonthTotal);
+    }
+});
+function openCoinModal(index) {
+    // 关闭统计汇总明细
+    closeSummary();
+    
+    // 确保所有模态框都已关闭
+    document.querySelectorAll('.modal').forEach(modal => {
+        const modalInstance = bootstrap.Modal.getInstance(modal);
+        if (modalInstance) {
+            modalInstance.hide();
+        }
+    });
+    
+    currentEditIndex = index;
+    document.getElementById('modal-name').textContent = `🎯 ${employeeData[index].name} - 发放激励币`;
+    document.getElementById('custom-coin').value = 1;
+    document.getElementById('coin-reason').value = '';
+    // 选中1张的按钮
+    document.querySelectorAll('#coin-modal .coin-btn').forEach(btn => btn.classList.remove('active'));
+    // 找到第一个按钮（1张）并激活
+    const defaultBtn = document.querySelector('#coin-modal .coin-btn');
+    if (defaultBtn) {
+        defaultBtn.classList.add('active');
+    }
+    
+    // 重置输入框状态为自定义数量，可修改
+    const customCoinInput = document.getElementById('custom-coin');
+    const quantityLabel = document.getElementById('quantity-label');
+    quantityLabel.textContent = '自定义数量';
+    customCoinInput.disabled = false;
+    
+    new bootstrap.Modal('#coin-modal').show();
+}
+
+// 打开补发激励币弹窗
+function openReissueModal(reissueDate) {
+    // 关闭统计汇总明细
+    closeSummary();
+    
+    // 填充员工列表为展开卡片形式
+    const employeeList = document.getElementById('reissue-employee-list');
+    // 清空内容并创建flex容器
+    employeeList.innerHTML = '<div style="display: flex; flex-wrap: wrap; gap: 2px; width: 100%; justify-content: space-between;"></div>';
+    const flexContainer = employeeList.querySelector('div');
+    
+    if (employeeData.length === 0) {
+        flexContainer.innerHTML = '<p class="text-center" style="font-size:15px;padding:20px 0;color:var(--text-muted);width: 100%;">暂无员工</p>';
+    } else {
+        // 只显示未离职且未删除的员工
+        const activeEmployees = employeeData.filter(employee => !employee.isResigned && !employee.isDeleted);
+        
+        if (activeEmployees.length === 0) {
+            flexContainer.innerHTML = '<p class="text-center" style="font-size:15px;padding:20px 0;color:var(--text-muted);width: 100%;">暂无员工</p>';
+        } else {
+            activeEmployees.forEach((employee, index) => {
+                // 找到员工在原始数组中的索引
+                const originalIndex = employeeData.findIndex(emp => emp.name === employee.name && !emp.isResigned && !emp.isDeleted);
+                
+                const card = document.createElement('div');
+                card.className = 'employee-card';
+                card.style.cursor = 'pointer';
+                card.style.border = '2px solid #E0EDE6';
+                card.style.height = '60px';
+                card.style.padding = '8px';
+                card.style.borderRadius = '8px';
+                card.style.backgroundColor = 'white';
+                card.style.boxShadow = '0 4px 12px rgba(0,158,96,0.1)';
+                card.style.transition = 'all 0.3s ease';
+                card.style.width = '49%';
+                card.style.flexShrink = '0';
+                card.style.minWidth = '120px';
+                card.style.boxSizing = 'border-box';
+                
+                card.onclick = () => {
+                    // 移除其他卡片的选中状态
+                    document.querySelectorAll('#reissue-employee-list .employee-card').forEach(c => {
+                        c.style.borderColor = '#E0EDE6';
+                        c.style.backgroundColor = 'white';
+                        c.style.borderStyle = 'solid';
+                        c.style.boxShadow = '0 4px 12px rgba(0,158,96,0.1)';
+                    });
+                    // 设置当前卡片为选中状态
+                    card.style.borderColor = 'var(--mars-green)';
+                    card.style.boxShadow = '0 6px 20px rgba(0,158,96,0.3)';
+                    card.style.opacity = '1';
+                    card.style.borderStyle = 'solid';
+                    // 保存选中的员工索引
+                    window.selectedEmployeeIndex = originalIndex;
+                    
+                    // 重置激励币数量和按钮状态
+                    document.getElementById('reissue-custom-coin').value = 1;
+                    // 选中1张的按钮
+                    document.querySelectorAll('#reissue-modal .coin-btn').forEach(btn => btn.classList.remove('active'));
+                    const defaultBtn = document.querySelector('#reissue-modal .coin-btn');
+                    if (defaultBtn) {
+                        defaultBtn.classList.add('active');
+                    }
+                    // 重置输入框状态
+                    const customCoinInput = document.getElementById('reissue-custom-coin');
+                    const quantityLabel = document.getElementById('reissue-quantity-label');
+                    quantityLabel.textContent = '自定义数量';
+                    customCoinInput.disabled = false;
+                };
+                
+                card.innerHTML = `
+                    <div style="font-size:14px;font-weight:700;text-align: center;"><span style="color: var(--text-dark);">${employee.name}</span></div>
+                    <div style="font-size:10px;margin-top:4px;text-align: center;"><span style="color: var(--text-muted);">月累计: ${employee.monthTotal}张</span></div>
+                `;
+                flexContainer.appendChild(card);
+            });
+        }
+    }
+    
+    // 设置弹窗标题
+    document.getElementById('reissue-modal-title').textContent = `补发激励币`;
+    
+    // 设置日期选择器
+    document.getElementById('reissue-date').value = reissueDate;
+    
+    // 重置表单
+    document.getElementById('reissue-custom-coin').value = 1;
+    
+    // 选中1张的按钮
+    document.querySelectorAll('#reissue-modal .coin-btn').forEach(btn => btn.classList.remove('active'));
+    const defaultBtn = document.querySelector('#reissue-modal .coin-btn');
+    if (defaultBtn) {
+        defaultBtn.classList.add('active');
+    }
+    
+    // 重置输入框状态
+    const customCoinInput = document.getElementById('reissue-custom-coin');
+    const quantityLabel = document.getElementById('reissue-quantity-label');
+    quantityLabel.textContent = '自定义数量';
+    customCoinInput.disabled = false;
+    
+    // 重置选中的员工索引
+    window.selectedEmployeeIndex = -1;
+    
+    // 保存当前补发日期到全局变量
+    window.reissueDate = reissueDate;
+    
+    const reissueModal = new bootstrap.Modal('#reissue-modal');
+    reissueModal.show();
+}
+// 为两个弹窗的coin-btn分别添加事件监听器
+function setupCoinBtnListeners(modalId, customCoinId, quantityLabelId) {
+    document.querySelectorAll(`${modalId} .coin-btn`).forEach(btn=>{
+        btn.addEventListener('click',()=>{
+            document.querySelectorAll(`${modalId} .coin-btn`).forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById(customCoinId).value = btn.dataset.val;
+            
+            // 检查是否是超级加倍卡
+            const isSuperCoin = btn.dataset.super === 'true';
+            const customCoinInput = document.getElementById(customCoinId);
+            const quantityLabel = document.getElementById(quantityLabelId);
+            
+            if (isSuperCoin) {
+                // 超级加倍卡：固定数量，不可修改
+                quantityLabel.textContent = '固定数量';
+                customCoinInput.value = '5'; // 固定为5张
+                customCoinInput.disabled = true;
+            } else {
+                // 其他选项：自定义数量，可修改
+                quantityLabel.textContent = '自定义数量';
+                customCoinInput.disabled = false;
+            }
+        });
+    });
+}
+
+// 设置两个弹窗的coin-btn监听器
+setupCoinBtnListeners('#coin-modal', 'custom-coin', 'quantity-label');
+setupCoinBtnListeners('#reissue-modal', 'reissue-custom-coin', 'reissue-quantity-label');
+document.getElementById('submit-coin').addEventListener('click',()=>{
+    const num = parseInt(document.getElementById('custom-coin').value) || 0;
+    const reason = document.getElementById('coin-reason').value.trim();
+    // 检查是否是超级加倍卡
+    const activeCoinBtn = document.querySelector('.coin-btn.active');
+    const isSuperCoin = activeCoinBtn && activeCoinBtn.dataset.super === 'true';
+    
+    // 累加当日数量
+    employeeData[currentEditIndex].today += num;
+    employeeData[currentEditIndex].reason = reason;
+    // 如果有表扬原因，添加到表扬记录中
+    if (reason) {
+        employeeData[currentEditIndex].praiseRecords.push({
+            date: todayDateStr,
+            reason: reason
+        });
+    }
+    employeeData[currentEditIndex].monthTotal += num;
+    // 记录每日发放数量
+    if (!employeeData[currentEditIndex].dailyRecords) {
+        employeeData[currentEditIndex].dailyRecords = {};
+    }
+    if (!employeeData[currentEditIndex].dailyRecords[todayDateStr]) {
+        employeeData[currentEditIndex].dailyRecords[todayDateStr] = 0;
+    }
+    employeeData[currentEditIndex].dailyRecords[todayDateStr] += num;
+    
+    // 如果是超级加倍卡，累加超级加倍卡数量
+    if (isSuperCoin) {
+        employeeData[currentEditIndex].superCoin += 1;
+        // 记录超级加倍卡发放日期
+        if (!employeeData[currentEditIndex].superCoinRecords) {
+            employeeData[currentEditIndex].superCoinRecords = {};
+        }
+        if (!employeeData[currentEditIndex].superCoinRecords[todayDateStr]) {
+            employeeData[currentEditIndex].superCoinRecords[todayDateStr] = 0;
+        }
+        employeeData[currentEditIndex].superCoinRecords[todayDateStr] += 1;
+    }
+    
+    // 记录当天的发放总数量
+    let dailyStats = JSON.parse(localStorage.getItem(`dailyStats_${currentDepartment}`)) || {};
+    if (!dailyStats[todayDateStr]) {
+        dailyStats[todayDateStr] = 0;
+    }
+    dailyStats[todayDateStr] += num;
+    localStorage.setItem(`dailyStats_${currentDepartment}`, JSON.stringify(dailyStats));
+    
+    saveData();
+    bootstrap.Modal.getInstance('#coin-modal').hide();
+    renderEmployee();
+    renderManageEmployeeList();
+    
+    // 保存历史记录
+    saveHistoryRecord(todayDateStr);
+    
+    // 显示成功弹窗
+    const successAlert = document.getElementById('success-alert');
+    successAlert.textContent = '发放成功';
+    successAlert.style.opacity = '1';
+    setTimeout(() => {
+        successAlert.style.opacity = '0';
+        // 重置激励币数量和按钮状态
+        document.getElementById('custom-coin').value = 1;
+        // 选中1张的按钮
+        document.querySelectorAll('#coin-modal .coin-btn').forEach(btn => btn.classList.remove('active'));
+        const defaultBtn = document.querySelector('#coin-modal .coin-btn');
+        if (defaultBtn) {
+            defaultBtn.classList.add('active');
+        }
+        // 重置输入框状态
+        const customCoinInput = document.getElementById('custom-coin');
+        const quantityLabel = document.getElementById('quantity-label');
+        quantityLabel.textContent = '自定义数量';
+        customCoinInput.disabled = false;
+    }, 800);
+});
+
+// 补发激励币提交事件
+document.getElementById('submit-reissue').addEventListener('click',()=>{
+    const employeeIndex = window.selectedEmployeeIndex;
+    const num = parseInt(document.getElementById('reissue-custom-coin').value) || 0;
+    const reissueDate = document.getElementById('reissue-date').value;
+    
+    if (!reissueDate) {
+        alert('请选择补发日期');
+        return;
+    }
+    
+    if (employeeIndex < 0) {
+        alert('请选择员工');
+        return;
+    }
+    
+    if (num <= 0) {
+        alert('请输入有效的激励币数量');
+        return;
+    }
+    
+    // 检查是否是超级加倍卡
+    const activeCoinBtn = document.querySelector('#reissue-modal .coin-btn.active');
+    const isSuperCoin = activeCoinBtn && activeCoinBtn.dataset.super === 'true';
+    
+    // 记录补发日期的发放总数量
+    let dailyStats = JSON.parse(localStorage.getItem(`dailyStats_${currentDepartment}`)) || {};
+    if (!dailyStats[reissueDate]) {
+        dailyStats[reissueDate] = 0;
+    }
+    dailyStats[reissueDate] += num;
+    localStorage.setItem(`dailyStats_${currentDepartment}`, JSON.stringify(dailyStats));
+    
+    // 记录每日发放数量
+    if (!employeeData[employeeIndex].dailyRecords) {
+        employeeData[employeeIndex].dailyRecords = {};
+    }
+    if (!employeeData[employeeIndex].dailyRecords[reissueDate]) {
+        employeeData[employeeIndex].dailyRecords[reissueDate] = 0;
+    }
+    employeeData[employeeIndex].dailyRecords[reissueDate] += num;
+    
+    // 累加月度数量
+    employeeData[employeeIndex].monthTotal += num;
+    
+    // 如果是超级加倍卡，累加超级加倍卡数量
+    if (isSuperCoin) {
+        employeeData[employeeIndex].superCoin += 1;
+        // 记录超级加倍卡发放日期
+        if (!employeeData[employeeIndex].superCoinRecords) {
+            employeeData[employeeIndex].superCoinRecords = {};
+        }
+        if (!employeeData[employeeIndex].superCoinRecords[reissueDate]) {
+            employeeData[employeeIndex].superCoinRecords[reissueDate] = 0;
+        }
+        employeeData[employeeIndex].superCoinRecords[reissueDate] += 1;
+    }
+    
+    saveData();
+    // 不要关闭补发界面，以便多次补发
+    // bootstrap.Modal.getInstance('#reissue-modal').hide();
+    renderEmployee();
+    renderManageEmployeeList();
+    
+    // 保存历史记录
+    saveHistoryRecord(reissueDate);
+    // 保存当天的历史记录，确保当天的补发结果自动汇总
+    saveHistoryRecord(todayDateStr);
+    
+    // 显示成功弹窗
+    const successAlert = document.getElementById('success-alert');
+    successAlert.textContent = '补发成功';
+    successAlert.style.opacity = '1';
+    setTimeout(() => {
+        successAlert.style.opacity = '0';
+        // 不要关闭补发界面，以便多次补发
+        // 重置表单，保持窗口打开状态
+        document.getElementById('reissue-custom-coin').value = 1;
+        // 选中1张的按钮
+        document.querySelectorAll('#reissue-modal .coin-btn').forEach(btn => btn.classList.remove('active'));
+        const defaultBtn = document.querySelector('#reissue-modal .coin-btn');
+        if (defaultBtn) {
+            defaultBtn.classList.add('active');
+        }
+        // 重置输入框状态
+        const customCoinInput = document.getElementById('reissue-custom-coin');
+        const quantityLabel = document.getElementById('reissue-quantity-label');
+        quantityLabel.textContent = '自定义数量';
+        customCoinInput.disabled = false;
+        // 重置员工选择
+        document.querySelectorAll('#reissue-employee-list .employee-card').forEach(c => {
+            c.style.borderColor = '#E0EDE6';
+            c.style.boxShadow = '0 4px 12px rgba(0,158,96,0.1)';
+            c.style.backgroundColor = 'white';
+            if (c.dataset.resigned === 'true') {
+                c.style.opacity = '0.6';
+                c.style.borderStyle = 'dashed';
+            }
+        });
+        window.selectedEmployeeIndex = -1;
+        // 设置补发成功标志
+        window.reissueSuccess = true;
+        // 监听模态框关闭事件，关闭后自动显示历史记录界面
+        const reissueModal = document.getElementById('reissue-modal');
+        // 移除之前的事件监听器，避免重复
+        reissueModal.removeEventListener('hidden.bs.modal', handleReissueModalClose);
+        // 添加新的事件监听器
+        reissueModal.addEventListener('hidden.bs.modal', handleReissueModalClose);
+    }, 800);
+});
+
+
+document.getElementById('add-employee').addEventListener('click',()=>{
+    const name = document.getElementById('new-employee-name').value.trim();
+    if(name) {
+        employeeData.push({name, today:0, monthTotal:0, superCoin:0, reason:'', dailyRecords:{}, superCoinRecords:{}, praiseRecords:[]});
+        document.getElementById('new-employee-name').value = '';
+        saveData();
+        renderEmployee();
+        renderManageEmployeeList();
+    } else alert('请输入员工姓名！');
+});
+function deleteEmployee(index) {
+    if(confirm('确定删除该员工？')){
+        // 标记员工为离职状态
+        employeeData[index].isResigned = true;
+        employeeData[index].resignDate = new Date().toISOString();
+        saveData();
+        renderEmployee();
+        renderManageEmployeeList();
+    }
+}
+
+// 确认删除离职员工的函数
+function confirmDeleteEmployee(index) {
+    const employee = employeeData[index];
+    const today = new Date();
+    const todayDay = today.getDate();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+    
+    // 检查是否在当月16号到月底之间
+    const isSecondHalf = todayDay >= 16;
+    
+    // 检查该员工在当月16号到当日是否有发放激励币的记录
+    let hasSecondHalfRecords = false;
+    let secondHalfCoins = 0;
+    
+    // 检查该员工在当月1号到15号是否有发放激励币的记录
+    let hasFirstHalfRecords = false;
+    
+    if (employee.dailyRecords) {
+        for (const dateStr in employee.dailyRecords) {
+            const recordDate = new Date(dateStr);
+            if (recordDate.getMonth() === currentMonth && recordDate.getFullYear() === currentYear) {
+                const day = recordDate.getDate();
+                if (day >= 16 && day <= todayDay) {
+                    hasSecondHalfRecords = true;
+                    secondHalfCoins += employee.dailyRecords[dateStr];
+                } else if (day >= 1 && day <= 15) {
+                    hasFirstHalfRecords = true;
+                }
+            }
+        }
+    }
+    
+    // 根据不同情况显示不同的确认弹窗
+    if (isSecondHalf) {
+        if (hasSecondHalfRecords) {
+            if (hasFirstHalfRecords) {
+                // 情况1：在16号到月底之间，该员工在上半月和下半月都有发放记录
+                if (confirm('是否删除此员工并回收其16号-当日激励币，1-15号发放数据仍保存？')) {
+                    // 回收16号到当日的激励币
+                    recoverSecondHalfCoins(index);
+                    // 标记员工为已删除状态，保留1-15号的发放记录
+                    deleteEmployeeData(index);
+                }
+            } else {
+                // 情况2：在16号到月底之间，该员工只在下半月有发放记录
+                if (confirm('是否删除此员工并回收其激励币？')) {
+                    // 回收所有激励币
+                    recoverAllCoins(index);
+                    // 标记员工为已删除状态
+                    deleteEmployeeData(index);
+                }
+            }
+        } else {
+            // 情况3：在16号到月底之间，该员工没有发放记录
+            if (confirm('是否删除此员工？')) {
+                // 标记员工为已删除状态
+                deleteEmployeeData(index);
+            }
+        }
+    } else {
+        // 情况4：在1号到15号之间，回收所有激励币
+        if (confirm('是否删除此员工并回收其激励币？')) {
+            // 回收所有激励币
+            recoverAllCoins(index);
+            // 标记员工为已删除状态
+            deleteEmployeeData(index);
+        }
+    }
+}
+
+// 回收16号到当日的激励币
+function recoverSecondHalfCoins(index) {
+    const employee = employeeData[index];
+    const today = new Date();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+    const todayDay = today.getDate();
+    const todayDateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(todayDay).padStart(2, '0')}`;
+    
+    let recoveredCoins = 0;
+    let recoveredSuperCoins = 0;
+    
+    if (employee.dailyRecords) {
+        for (const dateStr in employee.dailyRecords) {
+            const recordDate = new Date(dateStr);
+            if (recordDate.getMonth() === currentMonth && recordDate.getFullYear() === currentYear) {
+                const day = recordDate.getDate();
+                if (day >= 16 && day <= todayDay) {
+                    recoveredCoins += employee.dailyRecords[dateStr];
+                    delete employee.dailyRecords[dateStr];
+                }
+            }
+        }
+    }
+    
+    // 回收16号到当日的超级加倍卡
+    if (employee.superCoinRecords) {
+        for (const dateStr in employee.superCoinRecords) {
+            const recordDate = new Date(dateStr);
+            if (recordDate.getMonth() === currentMonth && recordDate.getFullYear() === currentYear) {
+                const day = recordDate.getDate();
+                if (day >= 16 && day <= todayDay) {
+                    recoveredSuperCoins += employee.superCoinRecords[dateStr];
+                    delete employee.superCoinRecords[dateStr];
+                }
+            }
+        }
+    }
+    
+    // 更新超级加倍卡数量
+    employee.superCoin -= recoveredSuperCoins;
+    
+    // 删除当日的表扬记录
+    if (employee.praiseRecords) {
+        employee.praiseRecords = employee.praiseRecords.filter(record => record.date !== todayDateStr);
+    }
+    
+    // 更新月度累计
+    employee.monthTotal -= recoveredCoins;
+    
+    // 保存数据
+    saveData();
+    
+    // 重新渲染
+    renderEmployee();
+    renderManageEmployeeList();
+    
+    // 显示成功提示
+    let successMessage = `已回收${recoveredCoins}张激励币`;
+    if (recoveredSuperCoins > 0) {
+        successMessage += `和${recoveredSuperCoins}张超级加倍卡`;
+    }
+    const successAlert = document.getElementById('success-alert');
+    successAlert.textContent = successMessage;
+    successAlert.style.opacity = '1';
+    setTimeout(() => {
+        successAlert.style.opacity = '0';
+    }, 800);
+}
+
+// 回收所有激励币
+function recoverAllCoins(index) {
+    const employee = employeeData[index];
+    
+    // 清空每日记录
+    employee.dailyRecords = {};
+    // 清空月度累计
+    employee.monthTotal = 0;
+    // 清空超级加倍卡记录
+    employee.superCoin = 0;
+    employee.superCoinRecords = {};
+    // 清空表扬记录
+    employee.praiseRecords = [];
+    
+    // 保存数据
+    saveData();
+    
+    // 重新渲染
+    renderEmployee();
+    renderManageEmployeeList();
+}
+
+// 删除员工数据
+function deleteEmployeeData(index) {
+    // 标记员工为已删除状态，而不是直接从数组中删除
+    // 这样可以保留员工的发放记录，特别是1-15号的记录
+    employeeData[index].isDeleted = true;
+    
+    // 保存数据
+    saveData();
+    
+    // 重新渲染
+    renderEmployee();
+    renderManageEmployeeList();
+}
+// 统计汇总按钮点击事件
+document.getElementById('show-summary-btn').addEventListener('click',()=>{
+    const {firstHalfTotal, secondHalfTotal, monthTotal} = calcMonthHalfTotal();
+    const prob = document.getElementById('today-problem').value.trim();
+    // 按当日激励币数量排序
+    const sortedEmployees = [...employeeData].sort((a,b) => b.today - a.today);
+    const td = employeeData.reduce((sum, item) => sum + item.today, 0);
+    
+    // 计算超级加倍卡总数量
+    const totalSuperCoins = employeeData.reduce((sum, item) => sum + item.superCoin, 0);
+    
+    // 获取当前日期的年份和月份
+    const today = new Date();
+    const recordYear = today.getFullYear();
+    const recordMonth = today.getMonth();
+    const recordDay = today.getDate();
+    
+    // 使用纯文本格式构建汇总内容，避免HTML元素导致的空行
+    let summaryText = `${storeName}店 ${currentDepartment} 激励币汇总统计\n`;
+    summaryText += `日期：${todayStr}\n`;
+    
+    if (employeeData.length) {
+        // 遍历所有员工，包括已删除的员工，确保1-15号的记录被统计
+        employeeData.forEach(it=>{
+            // 只显示未删除的员工，或者已删除但有1-15号发放记录的员工
+            let showEmployee = false;
+            if (!it.isDeleted) {
+                showEmployee = true;
+            } else if (it.isDeleted && it.dailyRecords) {
+                // 检查已删除员工是否在1-15号有发放记录
+                for (const recDateStr in it.dailyRecords) {
+                    const recDate = new Date(recDateStr);
+                    const sameMonth = recDate.getFullYear() === recordYear && recDate.getMonth() === recordMonth;
+                    const day = recDate.getDate();
+                    if (sameMonth && day >= 1 && day <= 15) {
+                        showEmployee = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (showEmployee) {
+                if (it.isResigned || it.isDeleted) {
+                    summaryText += `${it.name}：离职 月累计：${it.monthTotal}张\n`;
+                    // 如果有超级加倍卡，在月度统计下方另起一行记录
+                    if (it.superCoin > 0) {
+                        summaryText += `（超级加倍卡${it.superCoin}张）\n`;
+                    }
+                } else {
+                    const todayDisplay = it.today === 0 ? '休班' : `${it.today}张`;
+                    summaryText += `${it.name}：${todayDisplay} 月累计：${it.monthTotal}张\n`;
+                    // 如果有超级加倍卡，在月度统计下方另起一行记录
+                    if (it.superCoin > 0) {
+                        summaryText += `（超级加倍卡${it.superCoin}张）\n`;
+                    }
+                }
+            }
+        });
+    } else {
+        summaryText += '暂无员工数据\n';
+    }
+    // 处理当日排名
+    if (sortedEmployees.length > 0) {
+        // 过滤掉已删除的员工
+        const activeEmployees = employeeData.filter(item => !item.isDeleted);
+        const hasTodayCoin = activeEmployees.some(item => item.today > 0);
+        // 计算当日实际收到激励卡的员工数量
+        const activeEmployeesCount = activeEmployees.filter(item => item.today > 0).length;
+        if (!hasTodayCoin) {
+            summaryText += `🥇 当日第一名：无\n`;
+            // 只有当当日收到激励卡的员工数量大于等于7时，才显示第二名
+            if (activeEmployeesCount >= 7) {
+                summaryText += `🥈 当日第二名：无\n`;
+            }
+        } else {
+            // 过滤掉已删除的员工
+            const filteredSortedEmployees = sortedEmployees.filter(item => !item.isDeleted);
+            if (filteredSortedEmployees.length > 0) {
+                const maxCount = filteredSortedEmployees[0].today;
+                const topEmployees = filteredSortedEmployees.filter(emp => emp.today === maxCount);
+                if (topEmployees.length > 1) {
+                    // 并列第一名
+                    const names = topEmployees.map(emp => emp.name).join('、');
+                    summaryText += `🥇 当日第一名：${names}（${maxCount}张）\n`;
+                } else {
+                    summaryText += `🥇 当日第一名：${topEmployees[0].name}（${maxCount}张）\n`;
+                    // 只有当当日收到激励卡的员工数量大于等于7时，才显示第二名
+                    if (activeEmployeesCount >= 7) {
+                        // 找第二名
+                        const secondEmployees = filteredSortedEmployees.filter(emp => emp.today < maxCount);
+                        if (secondEmployees.length > 0) {
+                            const secondCount = secondEmployees[0].today;
+                            const secondGroup = secondEmployees.filter(emp => emp.today === secondCount);
+                            if (secondGroup.length > 1) {
+                                const names = secondGroup.map(emp => emp.name).join('、');
+                                summaryText += `🥈 当日第二名：${names}（${secondCount}张）\n`;
+                            } else {
+                                summaryText += `🥈 当日第二名：${secondGroup[0].name}（${secondCount}张）\n`;
+                            }
+                        } else {
+                            summaryText += `🥈 当日第二名：无\n`;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // 显示当天有表扬记录的员工，汇总展示同一人的所有表扬内容
+        const employeesWithPraise = employeeData.filter(item => {
+            return item.praiseRecords && item.praiseRecords.some(record => record.date === todayDateStr);
+        });
+        if (employeesWithPraise.length > 0) {
+            employeesWithPraise.forEach(item => {
+                summaryText += `👏 表扬：${item.name}\n`;
+                // 将同一人的当天的所有表扬内容用两个空格隔开，不换行
+                const praiseReasons = item.praiseRecords
+                    .filter(record => record.date === todayDateStr)
+                    .map(record => record.reason)
+                    .join('  ');
+                summaryText += `${praiseReasons}\n`;
+            });
+        }
+    }
+    // 添加机会点
+    summaryText += `⚠️ 机会点：${prob||'无'}\n`;
+    // 统计数据
+    summaryText += `🎯 ${currentDepartment}当月激励币数量：${globalMonthTotal}张\n`;
+    summaryText += `📊 当月发放总数量：${monthTotal}张\n`;
+    summaryText += `🌗 上半月：${firstHalfTotal}张\n`;
+    summaryText += `🌕 下半月：${secondHalfTotal}张\n`;
+    summaryText += `✨ 超级加倍卡：${totalSuperCoins}张`;
+    // 创建带有样式的HTML，但使用纯文本内容
+    let html = `<p style="margin-bottom:0;color:var(--text-dark);line-height:1.2;white-space:pre-wrap;">${summaryText}</p>`;
+    document.getElementById('summary-content').innerHTML = html;
+    document.getElementById('summary-area').classList.remove('d-none');
+    document.getElementById('summary-area').scrollIntoView({behavior:'smooth'});
+});
+document.getElementById('copy-summary-btn').addEventListener('click',()=>{
+    const content = document.getElementById('summary-content').innerText;
+    navigator.clipboard.writeText(content).then(()=>{
+        alert('✅ 已复制到剪贴板！');
+    }).catch(err=>{
+        console.error('复制失败：', err);
+        alert('复制失败，请手动复制');
+    });
+});
+
+// 关闭统计汇总明细
+function closeSummary() {
+    document.getElementById('summary-area').classList.add('d-none');
+}
+function saveData() {
+    // 关闭统计汇总明细
+    closeSummary();
+    
+    localStorage.setItem(`employeeData_${currentDepartment}`, JSON.stringify(employeeData));
+    localStorage.setItem(`globalMonthTotal_${currentDepartment}`, globalMonthTotal);
+    localStorage.setItem('currentDepartment', currentDepartment);
+    
+    // 每次保存数据后，自动更新当天的历史记录
+    const todayProblem = document.getElementById('today-problem').value.trim();
+    saveHistoryRecord(todayDateStr, todayProblem);
+}
+init();
+</script>
+</body>
+</html>
